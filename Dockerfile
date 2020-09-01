@@ -1,7 +1,7 @@
 FROM continuumio/miniconda2:4.7.12 AS gdal-build
 
 RUN apt-get update && \
-    apt-get install -y wget bzip2 unzip gcc bison flex make g++ \
+    apt-get install -y wget bzip2 unzip gcc bison flex make g++ libzstd-dev \
                       libreadline-dev zlib1g-dev libcfitsio-dev libgeos-dev libproj-dev libopenjp2-7-dev libtiff-dev libpq-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -15,7 +15,7 @@ RUN wget -q https://github.com/Esri/file-geodatabase-api/raw/master/FileGDB_API_
     tar -zxf  FileGDB_API_1_5_1-64gcc51.tar.gz -C $PGC_GDAL_INSTALL_ROOT/
 ENV LD_LIBRARY_PATH=$PGC_GDAL_INSTALL_ROOT/FileGDB_API-64gcc51/lib:$LD_LIBRARY_PATH
 
-ENV gdal_version 2.3.2
+ENV gdal_version 2.4.4
 RUN wget --no-check-certificate -q \
     http://download.osgeo.org/gdal/$gdal_version/gdal-$gdal_version.tar.gz && \
     tar xfz gdal-$gdal_version.tar.gz
@@ -29,6 +29,12 @@ RUN ./configure --prefix=$PGC_GDAL_INSTALL_ROOT/gdal \
     --with-python \
     --with-openjpeg \
     --with-fgdb=$PGC_GDAL_INSTALL_ROOT/FileGDB_API-64gcc51 \
+    --with-lerc \
+	--with-zstd \
+	--with-libtiff=internal \
+	--with-geotiff=internal \
+	--with-rename-internal-libtiff-symbols=yes \
+	--with-rename-internal-libgeotiff-symbols=yes \
     --with-sqlite3=no | tee /tmp/gdal_build/configure.log
 
 RUN make -j 8 | tee /tmp/gdal_build/make.log
@@ -43,7 +49,7 @@ FROM continuumio/miniconda2:4.7.12
 MAINTAINER azenk@umn.edu
 
 RUN apt-get update && \
-    apt-get install -y libreadline-dev zlib1g-dev libcfitsio-dev libgeos-dev libproj-dev libopenjp2-7-dev libtiff-dev libpq-dev && \
+    apt-get install -y libreadline-dev zlib1g-dev libcfitsio-dev libgeos-dev libproj-dev libopenjp2-7-dev libtiff-dev libpq-dev libzstd-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
